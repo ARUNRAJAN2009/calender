@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solar Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff8e8;--surface:#fff;--ink:#2a1d0a;--muted:#7a6a4f;--line:#ecdcb8;--sun:#f08a00;--sun-ink:#fff;--ok:#1a7f45;--no:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14100a;--surface:#211a0f;--ink:#fbf1da;--muted:#b9a67f;--line:#3a2e19;--sun:#ffb22e;--sun-ink:#2a1d0a;--ok:#5fd18b;--no:#ff8a80}}
+:root[data-theme="dark"]{--bg:#14100a;--surface:#211a0f;--ink:#fbf1da;--muted:#b9a67f;--line:#3a2e19;--sun:#ffb22e;--sun-ink:#2a1d0a;--ok:#5fd18b;--no:#ff8a80}
+*{box-sizing:border-box}
+:root{--hol:#c2255c;--hol-ink:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--hol:#ff6b9a;--hol-ink:#2a0a16}}
+:root[data-theme="dark"]{--hol:#ff6b9a;--hol-ink:#2a0a16}
+.m td.h{background:var(--hol);color:var(--hol-ink);border-radius:6px;font-weight:700}
+.m td.b{box-shadow:inset 0 0 0 1.5px var(--hol);border-radius:6px}
+.m td.o{box-shadow:inset 0 0 0 1.5px var(--sun);border-radius:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:.85rem;color:var(--muted)}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+.sw.h{background:var(--hol)}.sw.b{box-shadow:inset 0 0 0 2px var(--hol)}.sw.o{box-shadow:inset 0 0 0 2px var(--sun)}
+.wk{color:var(--muted);font-size:.8rem}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 14px;display:flex;justify-content:center}
+.wrap{width:100%;max-width:960px}
+h1{margin:0 0 4px;font-size:clamp(1.8rem,5vw,3rem);font-weight:800;letter-spacing:-.03em}
+.sub{color:var(--muted);margin:0 0 18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:1.1rem}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input{font:inherit;width:130px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1.2rem;font-weight:600}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 14px}
+button:hover{border-color:var(--sun)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.verdict{font-size:1.5rem;font-weight:800;margin:12px 0 6px}
+.verdict.yes{color:var(--ok)}.verdict.no{color:var(--no)}
+.why{margin:0;color:var(--ink);line-height:1.5}
+.rules{margin:10px 0 0;padding-left:20px;color:var(--muted);line-height:1.6}
+.rules b{color:var(--ink)}
+.tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}
+.tbl th{font-weight:600;color:var(--muted);font-size:.85rem;border-top:0}
+.scroll{overflow-x:auto}
+.clock{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.clock div{background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+.clock b{display:block;font-size:1.6rem;font-variant-numeric:tabular-nums}
+.clock span{font-size:.8rem;color:var(--muted)}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:10px 0 4px}
+.bar i{display:block;height:100%;background:var(--sun)}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.m h3{margin:0 0 6px;font-size:.95rem}
+.m table{width:100%;border-collapse:collapse;text-align:center;font-size:.8rem}
+.m th{color:var(--muted);font-weight:400;padding:2px 0}
+.m td{padding:3px 0}
+.m td.f{background:var(--sun);color:var(--sun-ink);border-radius:6px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Solar calendar</h1>
+  <p class="sub">The Gregorian calendar follows the sun. Enter any year to see if it is a leap year and exactly how long it is.</p>
+
+  <div class="card">
+    <div class="row">
+      <button id="py" aria-label="Previous year">&lsaquo;</button>
+      <input id="year" type="number" step="1" min="1" max="9999" aria-label="Year">
+      <button id="ny" aria-label="Next year">&rsaquo;</button>
+      <button id="cy">This year</button>
+    </div>
+    <div class="verdict" id="verdict"></div>
+    <p class="why" id="why"></p>
+    <ul class="rules">
+      <li>Divisible by <b>4</b> &rarr; leap year</li>
+      <li>&hellip;but divisible by <b>100</b> &rarr; not a leap year</li>
+      <li>&hellip;unless divisible by <b>400</b> &rarr; leap year again</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Length of this year</h2>
+    <div class="scroll"><table class="tbl" id="len"></table></div>
+    <div class="clock" id="clock" hidden></div>
+    <div class="bar" id="barw" hidden><i id="bar"></i></div>
+    <div id="pct" class="sub" hidden></div>
+  </div>
+
+  <div class="card">
+    <h2>Why leap years exist</h2>
+    <div class="scroll"><table class="tbl" id="sun"></table></div>
+    <p class="sub" id="drift" style="margin-top:10px"></p>
+  </div>
+
+  <div class="card">
+    <h2 id="gt"></h2>
+    <div class="months" id="months"></div>
+  </div>
+
+  <div class="card">
+    <h2>Holidays and festivals</h2>
+    <p class="sub" id="hsum"></p>
+    <div class="legend"><span><i class="sw h"></i>Govt holiday</span><span><i class="sw b"></i>Banks only</span><span><i class="sw o"></i>Observance</span></div>
+    <div class="scroll"><table class="tbl" id="hl"></table></div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const MON=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const isLeap=y=>(y%4===0&&y%100!==0)||y%400===0;
+const pad=n=>String(n).padStart(2,"0");
+const fmt=n=>n.toLocaleString("en-US");
+function hms(sec){
+  const s=Math.round(sec*10)/10;
+  const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=(s%60);
+  return d+" d "+h+" h "+m+" min "+(Math.round(x*10)/10)+" s";
+}
+const TROP=365.24219,GREG=365.2425,JUL=365.25;
+function why(y){
+  if(y%400===0)return y+" is divisible by 400, so it is a leap year (the century exception is cancelled).";
+  if(y%100===0)return y+" is divisible by 4 and by 100 but not by 400, so it is not a leap year.";
+  if(y%4===0)return y+" is divisible by 4 and not by 100, so it is a leap year.";
+  return y+" is not divisible by 4, so it is not a leap year.";
+}
+const DOWS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+/* Tamil Nadu govt public holidays (G.O. notifications for 2026 and 2027) */
+const H26={"01-01":"New Year's Day","01-15":"Pongal","01-16":"Thiruvalluvar Day","01-17":"Uzhavar Thirunal","01-26":"Republic Day","02-01":"Thai Poosam","03-19":"Telugu New Year","03-21":"Ramzan (Idul Fitr)","03-31":"Mahavir Jayanti","04-03":"Good Friday","04-14":"Tamil New Year / Ambedkar Jayanti","05-01":"May Day","05-28":"Bakrid (Idul Azha)","06-26":"Muharram","08-15":"Independence Day","08-26":"Milad-un-Nabi","09-05":"Krishna Jayanthi","09-17":"Vinayagar Chaturthi","10-02":"Gandhi Jayanthi","10-19":"Ayudha Pooja","10-20":"Vijaya Dasami","11-08":"Deepavali","12-25":"Christmas"};
+const H27={"01-01":"New Year's Day","01-15":"Pongal","01-16":"Thiruvalluvar Day","01-17":"Uzhavar Thirunal","01-22":"Thai Poosam","01-26":"Republic Day","03-10":"Eid ul-Fitr","03-26":"Good Friday","04-07":"Telugu New Year","04-14":"Tamil New Year / Ambedkar Jayanti","04-19":"Mahavir Jayanti","05-01":"May Day","05-17":"Bakrid","06-15":"Muharram","08-15":"Independence Day / Milad-un-Nabi","08-25":"Krishna Jayanti","09-04":"Ganesh Chaturthi","10-02":"Gandhi Jayanti","10-08":"Ayudha Poojai","10-09":"Vijayadasami","10-28":"Deepavali","12-25":"Christmas"};
+/* Other years: only fixed-date holidays (festival dates move every year) */
+const FIXED={"01-01":"New Year's Day","01-15":"Pongal (approx.)","01-26":"Republic Day","04-14":"Tamil New Year / Ambedkar Jayanti","05-01":"May Day","08-15":"Independence Day","10-02":"Gandhi Jayanti","12-25":"Christmas"};
+const OBS={"01-14":"Bhogi","03-08":"Women's Day","03-20":"Vernal equinox (approx.)","06-05":"World Environment Day","06-21":"Summer solstice (approx.)","09-05":"Teachers' Day","09-23":"Autumnal equinox (approx.)","11-14":"Children's Day","12-21":"Winter solstice (approx.)","12-24":"Christmas Eve","12-31":"New Year's Eve"};
+let HM={};
+function holMap(y){
+  const m={},base=y===2026?H26:y===2027?H27:FIXED;
+  Object.keys(base).forEach(k=>m[k]={n:base[k],t:"h"});
+  if(y===2026||y===2027)m["04-01"]={n:"Annual closing of accounts",t:"b"};
+  Object.keys(OBS).forEach(k=>{if(!m[k])m[k]={n:OBS[k],t:"o"}});
+  return m;
+}
+function renderHol(y){
+  const m=holMap(y),keys=Object.keys(m).sort(),off=(y===2026||y===2027);
+  const T={h:"Govt holiday",b:"Banks only",o:"Observance"};
+  let hc=0,wk=0,rows="<tr><th>Date</th><th>Day</th><th>Occasion</th><th>Type</th></tr>";
+  const now=new Date(),nk=pad(now.getMonth()+1)+"-"+pad(now.getDate());
+  let next=null;
+  keys.forEach(k=>{
+    const p=k.split("-").map(Number),dt=new Date(0);dt.setUTCFullYear(y,p[0]-1,p[1]);
+    const dow=dt.getUTCDay(),e=m[k],we=dow===0||dow===6;
+    if(e.t==="h"){hc++;if(we)wk++;if(!next&&y===now.getFullYear()&&k>=nk)next=e.n+" on "+p[1]+" "+MON[p[0]-1]}
+    rows+="<tr><td>"+p[1]+" "+MON[p[0]-1].slice(0,3)+"</td><td>"+DOWS[dow]+"</td><td>"+e.n+(e.t==="h"&&we?' <span class="wk">(weekend)</span>':"")+"</td><td>"+T[e.t]+"</td></tr>";
+  });
+  $("hl").innerHTML=rows;
+  $("hsum").textContent=hc+" government holidays in "+y+", "+wk+" of them on a weekend."+(next?" Next: "+next+".":"")+(off?" Based on the Tamil Nadu government notification; Islamic dates can shift with moon sighting.":" Only fixed-date holidays are shown for this year because festival dates (Deepavali, Eid, Ganesh Chaturthi and others) change every year. Official lists exist for 2026 and 2027.");
+}
+let year=new Date().getFullYear();
+function setYear(v){year=Math.min(9999,Math.max(1,Math.floor(Number(v))||new Date().getFullYear()));render()}
+function monthHtml(y,m){
+  const first=new Date(0);first.setUTCFullYear(y,m,1);first.setUTCHours(0,0,0,0);
+  const dim=new Date(Date.UTC(2000,m+1,0)).getUTCDate()-(m===1?1:0)+(m===1&&isLeap(y)?1:0);
+  const lead=first.getUTCDay();
+  let h='<div class="m"><h3>'+MON[m]+" "+dim+' days</h3><table><tr>'+["S","M","T","W","T","F","S"].map(d=>"<th>"+d+"</th>").join("")+"</tr><tr>";
+  for(let i=0;i<lead;i++)h+="<td></td>";
+  for(let d=1;d<=dim;d++){
+    const f=(m===1&&d===29);const he=HM[pad(m+1)+"-"+pad(d)];
+    h+="<td"+(he?' class="'+he.t+'" title="'+he.n+'"':(f?' class="f"':""))+">"+d+"</td>";
+    if((lead+d)%7===0&&d<dim)h+="</tr><tr>";
+  }
+  return h+"</tr></table></div>";
+}
+function render(){
+  const y=year,leap=isLeap(y),days=leap?366:365,secs=days*86400;
+  $("year").value=y;
+  const v=$("verdict");v.textContent=leap?"Leap year \u2013 366 days":"Not a leap year \u2013 365 days";
+  v.className="verdict "+(leap?"yes":"no");
+  $("why").textContent=why(y);
+  $("len").innerHTML=
+   "<tr><th>Unit</th><th>"+y+"</th></tr>"+
+   "<tr><td>Days</td><td>"+days+"</td></tr>"+
+   "<tr><td>Hours</td><td>"+fmt(days*24)+"</td></tr>"+
+   "<tr><td>Minutes</td><td>"+fmt(days*1440)+"</td></tr>"+
+   "<tr><td>Seconds</td><td>"+fmt(secs)+"</td></tr>"+
+   "<tr><td>February</td><td>"+(leap?29:28)+" days</td></tr>";
+  const cur=y===new Date().getFullYear();
+  ["clock","barw","pct"].forEach(i=>$(i).hidden=!cur);
+  tick();
+  const dt=(a)=>Math.abs(a-TROP)*86400;
+  $("sun").innerHTML=
+   "<tr><th>Year type</th><th>Length</th><th>Error vs sun per year</th></tr>"+
+   "<tr><td>Tropical (real sun year)</td><td>365 d 5 h 48 min 45 s</td><td>&ndash;</td></tr>"+
+   "<tr><td>Julian (leap every 4 years)</td><td>365 d 6 h 0 min 0 s</td><td>"+hms(dt(JUL))+" too long</td></tr>"+
+   "<tr><td>Gregorian (the rule above)</td><td>365 d 5 h 49 min 12 s</td><td>"+hms(dt(GREG))+" too long</td></tr>"+
+   "<tr><td>Plain 365-day year</td><td>365 d 0 h 0 min 0 s</td><td>"+hms(dt(365))+" too short</td></tr>";
+  $("drift").textContent="Earth takes about 365.2422 days to circle the sun, so a plain 365-day year loses nearly 6 hours every year. Leap years fix that. The Gregorian rule leaves only about "+Math.round(dt(GREG))+" seconds of error per year, which adds up to one extra day in roughly "+fmt(Math.round(86400/dt(GREG)))+" years.";
+  $("gt").textContent="All 12 months of "+y+" (pink = govt holiday, outlined = observance, gold = Feb 29)";
+  HM=holMap(y);let h="";for(let m=0;m<12;m++)h+=monthHtml(y,m);
+  $("months").innerHTML=h;renderHol(y);
+}
+function tick(){
+  if(year!==new Date().getFullYear())return;
+  const now=new Date(),s=new Date(year,0,1),e=new Date(year+1,0,1);
+  const el=(now-s)/1000,tot=(e-s)/1000,rem=tot-el;
+  const b=(t)=>{const d=Math.floor(t/86400),h=Math.floor(t%86400/3600),m=Math.floor(t%3600/60),x=Math.floor(t%60);return[d,h,m,x]};
+  const p=b(el);
+  const L=["days","hours","min","sec"];
+  $("clock").innerHTML=p.map((n,i)=>"<div><b>"+n+"</b><span>"+L[i]+" passed</span></div>").join("");
+  const pc=el/tot*100;
+  $("bar").style.width=pc+"%";
+  const r=b(rem);
+  $("pct").textContent=pc.toFixed(4)+"% of the year is done. Left: "+r[0]+" d "+r[1]+" h "+r[2]+" min "+r[3]+" s.";
+}
+$("year").addEventListener("change",e=>setYear(e.target.value));
+$("year").addEventListener("keydown",e=>{if(e.key==="Enter")setYear(e.target.value)});
+$("py").onclick=()=>setYear(year-1);
+$("ny").onclick=()=>setYear(year+1);
+$("cy").onclick=()=>setYear(new Date().getFullYear());
+setInterval(tick,1000);
+render();
+</script>
+</body>
+</html>
